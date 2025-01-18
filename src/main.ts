@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
-import 'vuetify/styles'
+// import 'vuetify/styles'
+import 'vuetify/dist/vuetify.min.css'
 import 'material-design-icons-iconfont/dist/material-design-icons.css' // Ensure your project is capable of handling css files
 import { createVuetify } from 'vuetify'
 import { aliases, md } from 'vuetify/iconsets/md'
