@@ -124,8 +124,6 @@ function drawImage(
     let imgAspect = fileUploadImage.value.height / fileUploadImage.value.width;
     const destAspect = destHeight / destWidth;
 
-    console.log(x, y, destWidth, destHeight);
-
     let offsetX = x;
     let offsetY = y;
     let targetWidth = destWidth;
