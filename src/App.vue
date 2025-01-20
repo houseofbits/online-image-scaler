@@ -227,6 +227,9 @@ async function readUrl() {
     return;
   }
 
+  isImageLoaded.value = false;
+  fileUploadImage.value = null;
+
   try {
     const data = await getRemoteImageDataBase64(loadImageUrl.value);
 
