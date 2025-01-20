@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 
+// const SERVER_URL = 'http://localhost:3001/get-image?';
+const SERVER_URL = 'https://img.dizainsuninterjers.lv/get-image?';
+
 let ctx: CanvasRenderingContext2D | null = null;
 const canvasRef = ref(null);
 const scale = ref(3);
@@ -160,7 +163,7 @@ function renderPage() {
     fileUploadImage.value != null &&
     canvasRef.value != null
   ) {
-    const margin = parseInt(pageMargin.value.toString()) || 0;
+    const margin = parseInt(pageMargin.value.toString()) * scale.value || 0;
 
     ctx.reset();
 
@@ -168,8 +171,8 @@ function renderPage() {
 
     ctx.save();
 
-    let destHeight = canvasHeight.value - (margin * scale.value * 2) - (innerMargin.value * scale.value * 0.5);
-    let destWidth = canvasWidth.value - (margin * scale.value * 2) - (innerMargin.value * scale.value * 0.5);
+    let destHeight = canvasHeight.value - (margin * 2);
+    let destWidth = canvasWidth.value - (margin * 2);
 
     if (!isPortrait.value) {
       [destWidth, destHeight] = [destHeight, destWidth];
@@ -177,20 +180,20 @@ function renderPage() {
       ctx.rotate((90 * Math.PI) / 180);
     }
 
-    let posX = margin * scale.value;
-    const innerMarginValue = (innerMargin.value * scale.value) / 2;
+    let posX = margin;
+    const innerMarginValue = (innerMargin.value * scale.value);
+
+    const innerWidth = (destWidth - innerMarginValue * (repeatHorizontally.value - 1)) / repeatHorizontally.value;
+    const innerHeight = (destHeight - innerMarginValue * (repeatVertically.value - 1)) / repeatVertically.value;
+
     for (let x = 0; x < repeatHorizontally.value; x++) {
-      const w = destWidth / repeatHorizontally.value;
-
-      let posY = margin * scale.value;
+      let posY = margin;
       for (let y = 0; y < repeatVertically.value; y++) {
-        const h = destHeight / repeatVertically.value;
+        drawImage(ctx, posX, posY, innerWidth, innerHeight);
 
-        drawImage(ctx, posX + innerMarginValue, posY + innerMarginValue, w - innerMarginValue, h - innerMarginValue);
-
-        posY += h;
+        posY += innerHeight + innerMarginValue;
       }
-      posX += w;
+      posX += innerWidth + innerMarginValue;
     }
 
     ctx.restore();
@@ -210,20 +213,36 @@ function download() {
   }
 }
 
-function readUrl() {
+async function getRemoteImageDataBase64(url: string): Promise<string> {
+  const params = new URLSearchParams({ url });
+  const response = await fetch(SERVER_URL + params.toString());
+  const result = await response.json();
+
+  return result.data;
+}
+
+async function readUrl() {
   if (!loadImageUrl.value || loadImageUrl.value.length == 0) {
     isImageUrlErrorVisible.value = true;
     return;
   }
-  fileUploadImage.value = new Image();
-  fileUploadImage.value.src = loadImageUrl.value ?? "";
-  fileUploadImage.value.crossOrigin = "anonymous";
-  fileUploadImage.value.onload = function () {
-    isImageLoaded.value = true;
-  };
-  fileUploadImage.value.onerror = function () {
+
+  try {
+    const data = await getRemoteImageDataBase64(loadImageUrl.value);
+
+    fileUploadImage.value = new Image();
+    fileUploadImage.value.src = data;
+    fileUploadImage.value.onload = function () {
+      isImageLoaded.value = true;
+    };
+    fileUploadImage.value.onerror = function () {
+      isImageUrlErrorVisible.value = true;
+    };
+  } catch (e) {
     isImageUrlErrorVisible.value = true;
-  };
+
+    return;
+  }
 }
 
 onMounted(async () => {
